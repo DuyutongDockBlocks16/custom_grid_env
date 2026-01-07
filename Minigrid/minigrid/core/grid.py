@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from typing import Any, Callable
+from typing import Any, Callable, List
 
 import numpy as np
 
@@ -200,8 +200,8 @@ class Grid:
     def render(
         self,
         tile_size: int,
-        agent_pos: tuple[int, int],
-        agent_dir: int | None = None,
+        agents_pos: List[tuple[int, int]],
+        agents_dir: List[int],
         highlight_mask: np.ndarray | None = None,
     ) -> np.ndarray:
         """
@@ -218,20 +218,51 @@ class Grid:
         height_px = self.height * tile_size
 
         img = np.zeros(shape=(height_px, width_px, 3), dtype=np.uint8)
+        
+        # 创建不同颜色的智能体
+        agent_colors = [
+            (255, 0, 0),    # 红色
+            (0, 255, 0),    # 绿色  
+            (0, 0, 255),    # 蓝色
+            (255, 255, 0),  # 黄色
+            (255, 0, 255),  # 品红色
+            (0, 255, 255),  # 青色
+        ]
 
         # Render the grid
         for j in range(0, self.height):
             for i in range(0, self.width):
                 cell = self.get(i, j)
+                
+                agents_here = []
+                for agent_idx, agent_pos in enumerate(agents_pos):
+                    if np.array_equal(agent_pos, (i, j)):
+                        agents_here.append((agent_idx, agents_dir[agent_idx]))
 
-                agent_here = np.array_equal(agent_pos, (i, j))
-                assert highlight_mask is not None
+                if agents_here:
+                    print(f"Rendering {len(agents_here)} agent(s) at position ({i}, {j}): {agents_here}")
+            
                 tile_img = Grid.render_tile(
                     cell,
-                    agent_dir=agent_dir if agent_here else None,
+                    agent_dir=None,
                     highlight=highlight_mask[i, j],
                     tile_size=tile_size,
                 )
+
+                # 如果有智能体，在基础图像上添加智能体
+                if agents_here:
+                    # 简单方案：只显示第一个智能体
+                    primary_agent_dir = agents_here[0][1]
+                    primary_agent_idx = agents_here[0][0]
+                    
+                    # 重新渲染包含主要智能体的图块，使用自定义颜色
+                    tile_img = self.render_tile_with_custom_agent(
+                        cell, 
+                        primary_agent_dir, 
+                        agent_colors[primary_agent_idx % len(agent_colors)],
+                        highlight_mask[i, j], 
+                        tile_size
+                    )
 
                 ymin = j * tile_size
                 ymax = (j + 1) * tile_size

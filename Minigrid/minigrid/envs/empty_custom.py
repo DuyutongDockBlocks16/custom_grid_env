@@ -68,15 +68,13 @@ class EmptyEnvCustom(MiniGridEnvCustom):
     def __init__(
         self,
         grid_size=8,
-        agent_start_pos=(1, 1),
-        agent_start_dir=0,
+        # agent_start_pos=(1, 1),
+        # agent_start_dir=0,
         max_steps: int | None = None,
-        max_of_other_agents: int = 3,
         **kwargs,
     ):
-        self.agent_start_pos = agent_start_pos
-        self.agent_start_dir = agent_start_dir
-        other_agents = kwargs.pop("other_agents", {})
+        agents_pos = kwargs.pop("agents_start_pos", {})
+        agents_dir = kwargs.pop("agents_start_dir", {})
 
         if max_steps is None:
             max_steps = 4 * grid_size**2
@@ -87,7 +85,8 @@ class EmptyEnvCustom(MiniGridEnvCustom):
             # Set this to True for maximum speed
             see_through_walls=False,
             max_steps=max_steps,
-            other_agents=other_agents,
+            agents_pos=agents_pos,
+            agents_dir=agents_dir,
             # max_of_other_agents = max_of_other_agents,
             **kwargs,
         )
@@ -105,12 +104,8 @@ class EmptyEnvCustom(MiniGridEnvCustom):
 
         # Place a goal square in the bottom-right corner
         # self.put_obj(Goal(), width - 2, height - 2)
-        self.place_obj(Box(color="green"))
+        self.place_obj(Box(color="green"), x = 7, y = 7)
 
-        # Place the agent
-        if self.agent_start_pos is not None:
-            self.agent_pos = self.agent_start_pos
-            self.agent_dir = self.agent_start_dir
-        else:
-            self.place_agent()
-            self.place_other_agents()
+
+        self.place_agents()
+

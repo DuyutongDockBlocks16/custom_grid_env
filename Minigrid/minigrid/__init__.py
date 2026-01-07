@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import List
 
 from gymnasium.envs.registration import register
 
@@ -189,15 +190,23 @@ def register_minigrid_envs():
         entry_point="minigrid.envs:EmptyEnv",
         kwargs={"size": 16},
     )
+
+    agents_start_pos: List[tuple[int, int]] = [
+        (2, 2), # Agent 0
+        (2, 3), # Agent 1
+    ]
     
-    other_agents = {
-        0 : {"start_pos": (1, 2), "start_dir": 0},
-    }
+    agents_start_dir: List[int] = [
+        0, # Agent 0
+        0, # Agent 1
+    ]
+
+    main_agent_idx = 1
 
     register(
         id="MiniGrid-Custom",
         entry_point="minigrid.envs:EmptyEnvCustom",
-        kwargs={"grid_size": 16, "other_agents": other_agents},
+        kwargs={"grid_size": 16, "agents_start_pos": agents_start_pos, "agents_start_dir": agents_start_dir, "main_agent_idx": main_agent_idx},
     )
 
     # Fetch

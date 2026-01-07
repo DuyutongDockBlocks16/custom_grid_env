@@ -7,7 +7,7 @@ import pygame
 from gymnasium import Env
 
 from minigrid.core.actions import Actions
-from minigrid.minigrid_env import MiniGridEnv
+from minigrid.minigrid_env_custom import MiniGridEnvCustom
 from minigrid.wrappers import ImgObsWrapper, RGBImgPartialObsWrapper
 
 
@@ -89,7 +89,7 @@ if __name__ == "__main__":
         type=str,
         help="gym environment to load",
         choices=gym.envs.registry.keys(),
-        default="MiniGrid-MultiRoom-N6-v0",
+        default="MiniGrid-Custom",
     )
     parser.add_argument(
         "--seed",
@@ -120,7 +120,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    env: MiniGridEnv = gym.make(
+    env: MiniGridEnvCustom = gym.make(
         args.env_id,
         tile_size=args.tile_size,
         render_mode="human",

@@ -1,4 +1,8 @@
 from __future__ import annotations
+from typing import List
+import os
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'Minigrid'))
 
 from minigrid.core.constants import COLOR_NAMES
 from minigrid.core.grid import Grid
@@ -7,33 +11,46 @@ from minigrid.core.world_object import Door, Goal, Key, Wall, Box
 from minigrid.manual_control import ManualControl
 # from minigrid.minigrid_env import MiniGridEnv
 from minigrid.minigrid_env_custom import MiniGridEnvCustom
+import inspect
+
+agents_start_pos: List[tuple[int, int]] = [
+    (2, 2), # Agent 0
+    (2, 3), # Agent 1
+]
+
+agents_start_dir: List[int] = [
+    0, # Agent 0
+    0, # Agent 1
+]
+
+main_agent_idx = 1
 
 
 class SimpleEnv(MiniGridEnvCustom):
     def __init__(
         self,
-        size=10,
-        agent_start_pos=(1, 1),
-        agent_start_dir=0,
+        grid_size=10,
+        agents_start_pos=agents_start_pos,
+        agents_start_dir=agents_start_dir,
+        main_agent_idx=main_agent_idx,
         max_steps: int | None = None,
         **kwargs,
     ):
-        self.agent_start_pos = agent_start_pos
-        self.agent_start_dir = agent_start_dir
-        other_agents = kwargs.pop("other_agents", {})
 
         mission_space = MissionSpace(mission_func=self._gen_mission)
 
         if max_steps is None:
-            max_steps = 4 * size**2
-
+            max_steps = 4 * grid_size**2
+            
         super().__init__(
             # mission_space=mission_space,
-            grid_size=size,
+            grid_size=grid_size,
             # Set this to True for maximum speed
             see_through_walls=True,
             max_steps=max_steps,
-            other_agents=other_agents,
+            agents_pos=agents_start_pos,
+            agents_dir=agents_start_dir,
+            main_agent_idx=main_agent_idx,
             **kwargs,
         )
 
@@ -50,15 +67,10 @@ class SimpleEnv(MiniGridEnvCustom):
 
         # Place a goal square in the bottom-right corner
         # self.put_obj(Goal(), width - 2, height - 2)
-        self.put_obj(Box(color="green"), width - 2, height - 2)
+        self.place_obj(Box(color="green"), x = 7, y = 7)
 
-        # Place the agent
-        if self.agent_start_pos is not None:
-            self.agent_pos = self.agent_start_pos
-            self.agent_dir = self.agent_start_dir
-        else:
-            self.place_agent()
-            # self.place_other_agents()
+        self.place_agents()
+
 
 def main():
     env = SimpleEnv(render_mode="human")
