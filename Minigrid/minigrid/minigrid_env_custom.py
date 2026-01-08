@@ -16,7 +16,7 @@ from minigrid.core.actions import Actions
 from minigrid.core.constants import COLOR_NAMES, DIR_TO_VEC, TILE_PIXELS
 from minigrid.core.grid_custom import Grid
 from minigrid.core.mission import MissionSpace
-from minigrid.core.world_object import Point, WorldObj
+from minigrid.core.world_object import Point, WorldObj, Agent
 
 T = TypeVar("T")
 
@@ -40,6 +40,7 @@ class MiniGridEnvCustom(gym.Env):
         agents_pos: List[tuple[int, int]] | None = None,
         agents_dir: List[int] | None = None,
         main_agent_idx: int = 0,
+        agents_colors: List[str] | None = None,
         see_through_walls: bool = False,
         agent_view_size: int = 7,
         render_mode: str | None = None,
@@ -103,6 +104,7 @@ class MiniGridEnvCustom(gym.Env):
 
         self.agents_initial_start_pos: List[tuple[int, int]] = agents_pos
         self.agents_initial_start_dir: List[int] = agents_dir
+        self.agents_colors: List[str] = agents_colors
         self.agents_pos: List[tuple[int, int]] = []
         self.agents_dir: List[int] = []
         self.main_agent_idx: int = main_agent_idx
@@ -149,6 +151,8 @@ class MiniGridEnvCustom(gym.Env):
         self.agents_observations = self.gen_obs_list()
 
         obs = self.agents_observations[self.main_agent_idx]
+        
+        print("obs in reset:", obs)
 
         return obs, {}
 
@@ -257,7 +261,12 @@ class MiniGridEnvCustom(gym.Env):
         """
         self.agents_pos: List[tuple[int, int]] = self.agents_initial_start_pos
         self.agents_dir: List[int] = self.agents_initial_start_dir
-    
+        # self.agents_colors: List[str] = self.agents_colors
+
+        for i in range(self.number_of_agents):
+            obj = Agent(color=self.agents_colors[i])
+            self.grid.set(self.agents_pos[i][0], self.agents_pos[i][1], obj)
+
     def dir_vec(self, agent_idx):
         """
         Get the vector pointing in the direction of the agent.
@@ -403,6 +412,8 @@ class MiniGridEnvCustom(gym.Env):
             self.render()
 
         obs = self.gen_obs_list()[self.main_agent_idx]
+        
+        print("obs in step:", obs)
 
         return obs, reward, terminated, truncated, {}
 
@@ -410,7 +421,7 @@ class MiniGridEnvCustom(gym.Env):
         # Get the position in front of the agent
         fwd_pos = self.fwd_pos(agent_idx)
         agent_pos = self.agents_pos[agent_idx]
-        print(f"Agent {agent_idx} position: {agent_pos}, forward position: {fwd_pos}")
+        # print(f"Agent {agent_idx} position: {agent_pos}, forward position: {fwd_pos}")
 
         # Get the contents of the cell in front of the agent
         fwd_cell = self.grid.get(*fwd_pos)
@@ -497,7 +508,7 @@ class MiniGridEnvCustom(gym.Env):
         if self.agent_carrying_list[agent_idx] is not None:
             grid.set(*agent_pos, self.agent_carrying_list[agent_idx])
         else:
-            grid.set(*agent_pos, None)
+            grid.set(*agent_pos, Agent())
 
         return grid, vis_mask
 
@@ -511,7 +522,7 @@ class MiniGridEnvCustom(gym.Env):
             image = grid.encode(vis_mask)
 
             obs = {"image": image, "direction": self.agents_dir[agent_idx]}
-
+            
             self.agents_observations.append(obs)
 
         return self.agents_observations
@@ -573,12 +584,13 @@ class MiniGridEnvCustom(gym.Env):
                 # Mark this cell to be highlighted
                 highlight_mask[abs_i, abs_j] = True
 
-        print("Agents positions:", self.agents_pos)
+        # print("Agents positions:", self.agents_pos)
         # Render the whole grid
         img = self.grid.render(
             tile_size,
             self.agents_pos,
             self.agents_dir,
+            self.agents_colors,
             highlight_mask=highlight_mask if highlight else None,
         )
 

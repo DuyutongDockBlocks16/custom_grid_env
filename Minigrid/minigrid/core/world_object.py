@@ -242,8 +242,6 @@ class Key(WorldObj):
 
     def can_pickup(self):
         return True
-    
-
 
     def render(self, img):
         c = COLORS[self.color]
@@ -295,4 +293,17 @@ class Box(WorldObj):
     def toggle(self, env, pos):
         # Replace the box by its contents
         env.grid.set(pos[0], pos[1], self.contains)
+        return True
+
+    # def see_behind(self):
+    #     return False
+    
+class Agent(WorldObj):
+    def __init__(self, color: str = "red"):
+        super().__init__("agent", color)
+
+    def render(self, img):
+        pass
+        
+    def can_overlap(self):
         return True

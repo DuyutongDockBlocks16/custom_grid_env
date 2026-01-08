@@ -5,7 +5,7 @@ from typing import Any, Callable, List
 
 import numpy as np
 
-from minigrid.core.constants import OBJECT_TO_IDX, TILE_PIXELS
+from minigrid.core.constants import OBJECT_TO_IDX, TILE_PIXELS, COLORS
 from minigrid.core.world_object import Wall, WorldObj
 from minigrid.utils.rendering import (
     downsample,
@@ -15,6 +15,8 @@ from minigrid.utils.rendering import (
     point_in_triangle,
     rotate_fn,
 )
+
+
 
 
 class Grid:
@@ -173,18 +175,6 @@ class Grid:
         if obj is not None:
             obj.render(img)
 
-        # Overlay the agent on top
-        if agent_dir is not None:
-            tri_fn = point_in_triangle(
-                (0.12, 0.19),
-                (0.87, 0.50),
-                (0.12, 0.81),
-            )
-
-            # Rotate the agent based on its direction
-            tri_fn = rotate_fn(tri_fn, cx=0.5, cy=0.5, theta=0.5 * math.pi * agent_dir)
-            fill_coords(img, tri_fn, (255, 0, 0))
-
         # Highlight the cell if needed
         if highlight:
             highlight_img(img)
@@ -202,6 +192,7 @@ class Grid:
         tile_size: int,
         agents_pos: List[tuple[int, int]],
         agents_dir: List[int],
+        agents_colors: List[str],
         highlight_mask: np.ndarray | None = None,
     ) -> np.ndarray:
         """
@@ -218,21 +209,6 @@ class Grid:
         height_px = self.height * tile_size
 
         img = np.zeros(shape=(height_px, width_px, 3), dtype=np.uint8)
-        
-        # Create different colors for agents
-        agent_colors = [
-            (255, 0, 0),      # Red
-            (0, 255, 0),      # Green  
-            (0, 0, 255),      # Blue
-            (255, 255, 0),    # Yellow
-            (255, 0, 255),    # Magenta
-            (0, 255, 255),    # Cyan
-            (255, 165, 0),    # Orange
-            (128, 0, 128),    # Purple
-            (255, 192, 203),  # Pink
-            (165, 42, 42),    # Brown
-            (128, 128, 128),  # Gray
-        ]
 
         # Render the grid
         for j in range(0, self.height):
@@ -242,14 +218,10 @@ class Grid:
                 agents_here = []
                 for agent_idx, agent_pos in enumerate(agents_pos):
                     if np.array_equal(agent_pos, (i, j)):
-                        agents_here.append((agent_idx, agents_dir[agent_idx]))
+                        agents_here.append((agent_idx, agents_dir[agent_idx], agents_colors[agent_idx]))
 
-                if agents_here:
-                    print(f"Rendering {len(agents_here)} agent(s) at position ({i}, {j}): {agents_here}")
-            
                 tile_img = Grid.render_tile(
                     cell,
-                    agent_dir=None,
                     highlight=highlight_mask[i, j],
                     tile_size=tile_size,
                 )
@@ -258,7 +230,6 @@ class Grid:
                     tile_img = self.render_tile_with_multiple_agents(
                         cell, 
                         agents_here, 
-                        agent_colors,
                         highlight_mask[i, j], 
                         tile_size
                     )
@@ -298,14 +269,13 @@ class Grid:
         return array
     
     def render_tile_with_multiple_agents(
-    self,
-    obj: WorldObj | None,
-    agents_here: List[tuple[int, int]],
-    agent_colors: List[tuple[int, int, int]],
-    highlight: bool,
-    tile_size: int,
-    subdivs: int = 3,
-    ) -> np.ndarray:
+        self,
+        obj: WorldObj | None,
+        agents_here: List[tuple[int, int]],
+        highlight: bool,
+        tile_size: int,
+        subdivs: int = 3,
+        ) -> np.ndarray:
 
         
         img = np.zeros(
@@ -319,8 +289,7 @@ class Grid:
         if obj is not None:
             obj.render(img)
 
-        for i, (agent_idx, agent_dir) in enumerate(agents_here):
-            agent_color = agent_colors[agent_idx % len(agent_colors)]
+        for i, (agent_idx, agent_dir, agent_color) in enumerate(agents_here):
             
             offset_x, offset_y = self.get_agent_offset(i, len(agents_here))
             
@@ -331,7 +300,7 @@ class Grid:
             )
             
             tri_fn = rotate_fn(tri_fn, cx=0.5, cy=0.5, theta=0.5 * math.pi * agent_dir)
-            fill_coords(img, tri_fn, agent_color)
+            fill_coords(img, tri_fn, COLORS[agent_color])
 
         # Highlight the cell if needed
         if highlight:

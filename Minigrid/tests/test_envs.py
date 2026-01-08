@@ -10,7 +10,7 @@ import pytest
 from gymnasium.envs.registration import EnvSpec
 from gymnasium.utils.env_checker import check_env, data_equivalence
 
-from minigrid.core.grid import Grid
+from minigrid.core.grid_custom import Grid
 from minigrid.core.mission import MissionSpace
 from tests.utils import all_testing_env_specs, assert_equals
 

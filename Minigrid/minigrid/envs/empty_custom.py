@@ -68,13 +68,12 @@ class EmptyEnvCustom(MiniGridEnvCustom):
     def __init__(
         self,
         grid_size=8,
-        # agent_start_pos=(1, 1),
-        # agent_start_dir=0,
         max_steps: int | None = None,
         **kwargs,
     ):
         agents_pos = kwargs.pop("agents_start_pos", {})
         agents_dir = kwargs.pop("agents_start_dir", {})
+        agent_colors = kwargs.pop("agent_colors", {})
 
         if max_steps is None:
             max_steps = 4 * grid_size**2
@@ -87,6 +86,7 @@ class EmptyEnvCustom(MiniGridEnvCustom):
             max_steps=max_steps,
             agents_pos=agents_pos,
             agents_dir=agents_dir,
+            agents_colors=agent_colors
             # max_of_other_agents = max_of_other_agents,
             **kwargs,
         )
@@ -105,7 +105,6 @@ class EmptyEnvCustom(MiniGridEnvCustom):
         # Place a goal square in the bottom-right corner
         # self.put_obj(Goal(), width - 2, height - 2)
         self.place_obj(Box(color="green"), x = 7, y = 7)
-
 
         self.place_agents()
 

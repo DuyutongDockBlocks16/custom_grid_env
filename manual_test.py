@@ -15,22 +15,30 @@ import inspect
 
 agents_start_pos: List[tuple[int, int]] = [
     (2, 2), # Agent 0
-    (2, 2), # Agent 1
-    (2, 2), # Agent 2
-    (2, 2), # Agent 3
-    (2, 2), # Agent 4
+    (2, 4), # Agent 1
+    # (2, 2), # Agent 2
+    # (2, 2), # Agent 3
+    # (2, 2), # Agent 4
 
 ]
 
 agents_start_dir: List[int] = [
     0, # Agent 0
     0, # Agent 1
-    0, # Agent 2
-    0, # Agent 3
-    0, # Agent 4
+    # 0, # Agent 2
+    # 0, # Agent 3
+    # 0, # Agent 4
 ]
 
-main_agent_idx = 1
+agents_colors: List[str] = [
+    "red",
+    "green",
+    "blue",
+    "purple",
+    "yellow"
+]
+
+main_agent_idx = 0
 
 
 class SimpleEnv(MiniGridEnvCustom):
@@ -40,6 +48,7 @@ class SimpleEnv(MiniGridEnvCustom):
         agents_start_pos=agents_start_pos,
         agents_start_dir=agents_start_dir,
         main_agent_idx=main_agent_idx,
+        agent_colors=agents_colors,
         max_steps: int | None = None,
         **kwargs,
     ):
@@ -53,11 +62,12 @@ class SimpleEnv(MiniGridEnvCustom):
             # mission_space=mission_space,
             grid_size=grid_size,
             # Set this to True for maximum speed
-            see_through_walls=True,
+            see_through_walls=False,
             max_steps=max_steps,
             agents_pos=agents_start_pos,
             agents_dir=agents_start_dir,
             main_agent_idx=main_agent_idx,
+            agents_colors=agents_colors,
             **kwargs,
         )
 
@@ -74,7 +84,7 @@ class SimpleEnv(MiniGridEnvCustom):
 
         # Place a goal square in the bottom-right corner
         # self.put_obj(Goal(), width - 2, height - 2)
-        self.place_obj(Box(color="green"), x = 7, y = 7)
+        self.place_obj(Box(color="green"), x = 3, y = 2)
 
         self.place_agents()
 
