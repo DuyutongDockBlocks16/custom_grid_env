@@ -108,6 +108,7 @@ class MiniGridEnvCustom(gym.Env):
         self.agents_pos: List[tuple[int, int]] = []
         self.agents_dir: List[int] = []
         self.main_agent_idx: int = main_agent_idx
+        # print("main_agent_idx:", self.main_agent_idx)
         self.number_of_agents: int = len(agents_pos)
         
         self.agents_observations: List[ObsType] = []
@@ -152,7 +153,7 @@ class MiniGridEnvCustom(gym.Env):
 
         obs = self.agents_observations[self.main_agent_idx]
         
-        print("obs in reset:", obs)
+        # print("obs in reset:", obs)
 
         return obs, {}
 
@@ -413,7 +414,7 @@ class MiniGridEnvCustom(gym.Env):
 
         obs = self.gen_obs_list()[self.main_agent_idx]
         
-        print("obs in step:", obs)
+        # print("obs in step:", obs)
 
         return obs, reward, terminated, truncated, {}
 
@@ -472,6 +473,8 @@ class MiniGridEnvCustom(gym.Env):
         else:
             raise ValueError(f"Unknown action: {action}")
         
+        # print("agents_dir:", self.agents_dir[self.main_agent_idx])
+        
     def _command_other_agent(self):
         pass
 
@@ -516,10 +519,14 @@ class MiniGridEnvCustom(gym.Env):
         """
         Generate the agent's view (partially observable, low-resolution encoding)
         """
+        
+        self.agents_observations = []
     
         for agent_idx in range(self.number_of_agents):
             grid, vis_mask = self.gen_obs_grid(agent_idx)
             image = grid.encode(vis_mask)
+
+            # print("agents_dir:", self.agents_dir[agent_idx])
 
             obs = {"image": image, "direction": self.agents_dir[agent_idx]}
             

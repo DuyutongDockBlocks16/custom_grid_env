@@ -33,12 +33,12 @@ agents_start_dir: List[int] = [
 agents_colors: List[str] = [
     "red",
     "green",
-    "blue",
-    "purple",
-    "yellow"
+    # "blue",
+    # "purple",
+    # "yellow"
 ]
 
-main_agent_idx = 0
+main_agent_idx = 1
 
 
 class SimpleEnv(MiniGridEnvCustom):
@@ -48,7 +48,7 @@ class SimpleEnv(MiniGridEnvCustom):
         agents_start_pos=agents_start_pos,
         agents_start_dir=agents_start_dir,
         main_agent_idx=main_agent_idx,
-        agent_colors=agents_colors,
+        agents_colors=agents_colors,
         max_steps: int | None = None,
         **kwargs,
     ):

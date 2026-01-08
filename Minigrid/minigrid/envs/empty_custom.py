@@ -73,7 +73,8 @@ class EmptyEnvCustom(MiniGridEnvCustom):
     ):
         agents_pos = kwargs.pop("agents_start_pos", {})
         agents_dir = kwargs.pop("agents_start_dir", {})
-        agent_colors = kwargs.pop("agent_colors", {})
+        main_agent_idx = kwargs.pop("main_agent_idx", 0)
+        agents_colors = kwargs.pop("agents_colors", {})
 
         if max_steps is None:
             max_steps = 4 * grid_size**2
@@ -86,7 +87,8 @@ class EmptyEnvCustom(MiniGridEnvCustom):
             max_steps=max_steps,
             agents_pos=agents_pos,
             agents_dir=agents_dir,
-            agents_colors=agent_colors
+            main_agent_idx=main_agent_idx,
+            agents_colors=agents_colors,
             # max_of_other_agents = max_of_other_agents,
             **kwargs,
         )

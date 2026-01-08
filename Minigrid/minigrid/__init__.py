@@ -201,7 +201,7 @@ def register_minigrid_envs():
         0, # Agent 1
     ]
 
-    main_agent_idx = 1
+    main_agent_idx = 0
 
     register(
         id="MiniGrid-Custom",
