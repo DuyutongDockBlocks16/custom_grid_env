@@ -14,7 +14,7 @@ from gymnasium.core import ActType, ObsType
 
 from minigrid.core.actions import Actions
 from minigrid.core.constants import COLOR_NAMES, DIR_TO_VEC, TILE_PIXELS
-from minigrid.core.grid import Grid
+from minigrid.core.grid_custom import Grid
 from minigrid.core.mission import MissionSpace
 from minigrid.core.world_object import Point, WorldObj
 

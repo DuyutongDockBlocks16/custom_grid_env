@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from typing import Any, Callable
+from typing import Any, Callable, List
 
 import numpy as np
 
@@ -200,8 +200,8 @@ class Grid:
     def render(
         self,
         tile_size: int,
-        agent_pos: tuple[int, int],
-        agent_dir: int | None = None,
+        agents_pos: List[tuple[int, int]],
+        agents_dir: List[int],
         highlight_mask: np.ndarray | None = None,
     ) -> np.ndarray:
         """
@@ -218,20 +218,50 @@ class Grid:
         height_px = self.height * tile_size
 
         img = np.zeros(shape=(height_px, width_px, 3), dtype=np.uint8)
+        
+        # Create different colors for agents
+        agent_colors = [
+            (255, 0, 0),      # Red
+            (0, 255, 0),      # Green  
+            (0, 0, 255),      # Blue
+            (255, 255, 0),    # Yellow
+            (255, 0, 255),    # Magenta
+            (0, 255, 255),    # Cyan
+            (255, 165, 0),    # Orange
+            (128, 0, 128),    # Purple
+            (255, 192, 203),  # Pink
+            (165, 42, 42),    # Brown
+            (128, 128, 128),  # Gray
+        ]
 
         # Render the grid
         for j in range(0, self.height):
             for i in range(0, self.width):
                 cell = self.get(i, j)
+                
+                agents_here = []
+                for agent_idx, agent_pos in enumerate(agents_pos):
+                    if np.array_equal(agent_pos, (i, j)):
+                        agents_here.append((agent_idx, agents_dir[agent_idx]))
 
-                agent_here = np.array_equal(agent_pos, (i, j))
-                assert highlight_mask is not None
+                if agents_here:
+                    print(f"Rendering {len(agents_here)} agent(s) at position ({i}, {j}): {agents_here}")
+            
                 tile_img = Grid.render_tile(
                     cell,
-                    agent_dir=agent_dir if agent_here else None,
+                    agent_dir=None,
                     highlight=highlight_mask[i, j],
                     tile_size=tile_size,
                 )
+
+                if agents_here:
+                    tile_img = self.render_tile_with_multiple_agents(
+                        cell, 
+                        agents_here, 
+                        agent_colors,
+                        highlight_mask[i, j], 
+                        tile_size
+                    )
 
                 ymin = j * tile_size
                 ymax = (j + 1) * tile_size
@@ -266,6 +296,76 @@ class Grid:
                         array[i, j, :] = v.encode()
 
         return array
+    
+    def render_tile_with_multiple_agents(
+    self,
+    obj: WorldObj | None,
+    agents_here: List[tuple[int, int]],
+    agent_colors: List[tuple[int, int, int]],
+    highlight: bool,
+    tile_size: int,
+    subdivs: int = 3,
+    ) -> np.ndarray:
+
+        
+        img = np.zeros(
+            shape=(tile_size * subdivs, tile_size * subdivs, 3), dtype=np.uint8
+        )
+
+        # Draw the grid lines (top and left edges)
+        fill_coords(img, point_in_rect(0, 0.031, 0, 1), (100, 100, 100))
+        fill_coords(img, point_in_rect(0, 1, 0, 0.031), (100, 100, 100))
+
+        if obj is not None:
+            obj.render(img)
+
+        for i, (agent_idx, agent_dir) in enumerate(agents_here):
+            agent_color = agent_colors[agent_idx % len(agent_colors)]
+            
+            offset_x, offset_y = self.get_agent_offset(i, len(agents_here))
+            
+            tri_fn = point_in_triangle(
+                (0.12 + offset_x, 0.19 + offset_y),
+                (0.87 + offset_x, 0.50 + offset_y),
+                (0.12 + offset_x, 0.81 + offset_y),
+            )
+            
+            tri_fn = rotate_fn(tri_fn, cx=0.5, cy=0.5, theta=0.5 * math.pi * agent_dir)
+            fill_coords(img, tri_fn, agent_color)
+
+        # Highlight the cell if needed
+        if highlight:
+            highlight_img(img)
+
+        # Downsample the image to perform supersampling/anti-aliasing
+        img = downsample(img, subdivs)
+
+        return img
+
+    def get_agent_offset(self, agent_index: int, total_agents: int) -> tuple[float, float]:
+        """
+        Generate different position offsets for multiple agents to avoid overlap
+        """
+        if total_agents == 1:
+            return (0.0, 0.0)
+        elif total_agents == 2:
+            # Two agents: left-right arrangement
+            offsets = [(-0.15, 0.0), (0.15, 0.0)]
+        elif total_agents == 3:
+            # Three agents: triangle arrangement
+            offsets = [(0.0, -0.1), (-0.15, 0.1), (0.15, 0.1)]
+        elif total_agents == 4:
+            # Four agents: corner arrangement
+            offsets = [(-0.15, -0.15), (0.15, -0.15), (-0.15, 0.15), (0.15, 0.15)]
+        else:
+            # More agents: circular arrangement
+            angle = 2 * math.pi * agent_index / total_agents
+            radius = 0.15
+            offset_x = radius * math.cos(angle)
+            offset_y = radius * math.sin(angle)
+            return (offset_x, offset_y)
+        
+        return offsets[agent_index] if agent_index < len(offsets) else (0.0, 0.0)
 
     @staticmethod
     def decode(array: np.ndarray) -> tuple[Grid, np.ndarray]:

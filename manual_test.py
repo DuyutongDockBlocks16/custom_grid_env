@@ -5,7 +5,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'Minigrid'))
 
 from minigrid.core.constants import COLOR_NAMES
-from minigrid.core.grid import Grid
+from minigrid.core.grid_custom import Grid
 from minigrid.core.mission import MissionSpace
 from minigrid.core.world_object import Door, Goal, Key, Wall, Box
 from minigrid.manual_control import ManualControl
@@ -15,12 +15,19 @@ import inspect
 
 agents_start_pos: List[tuple[int, int]] = [
     (2, 2), # Agent 0
-    (2, 3), # Agent 1
+    (2, 2), # Agent 1
+    (2, 2), # Agent 2
+    (2, 2), # Agent 3
+    (2, 2), # Agent 4
+
 ]
 
 agents_start_dir: List[int] = [
     0, # Agent 0
     0, # Agent 1
+    0, # Agent 2
+    0, # Agent 3
+    0, # Agent 4
 ]
 
 main_agent_idx = 1
