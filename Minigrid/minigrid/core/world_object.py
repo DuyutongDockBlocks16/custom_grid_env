@@ -41,6 +41,8 @@ class WorldObj:
 
         # Current position of the object
         self.cur_pos: Point | None = None
+        
+        self.is_picked_up: bool = False
 
     def can_overlap(self) -> bool:
         """Can the agent overlap with this?"""
@@ -294,6 +296,7 @@ class Box(WorldObj):
         # Replace the box by its contents
         env.grid.set(pos[0], pos[1], self.contains)
         return True
+    
 
     # def see_behind(self):
     #     return False
@@ -307,3 +310,6 @@ class Agent(WorldObj):
         
     def can_overlap(self):
         return True
+    
+    # def see_behind(self):
+    #     return False

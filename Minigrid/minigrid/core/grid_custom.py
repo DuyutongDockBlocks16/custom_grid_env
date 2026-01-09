@@ -6,7 +6,7 @@ from typing import Any, Callable, List
 import numpy as np
 
 from minigrid.core.constants import OBJECT_TO_IDX, TILE_PIXELS, COLORS
-from minigrid.core.world_object import Wall, WorldObj
+from minigrid.core.world_object import Wall, Box, WorldObj
 from minigrid.utils.rendering import (
     downsample,
     fill_coords,
@@ -35,6 +35,7 @@ class Grid:
         self.height: int = height
 
         self.grid: list[WorldObj | None] = [None] * (width * height)
+        # self.under_grid: list[WorldObj | None] = [None] * (width * height)
 
     def __contains__(self, key: Any) -> bool:
         if isinstance(key, WorldObj):
@@ -78,6 +79,15 @@ class Grid:
         assert 0 <= j < self.height
         assert self.grid is not None
         return self.grid[j * self.width + i]
+    
+    def search_unpicked_up_box(self) -> list[tuple[np.int64, np.int64]]:
+        positions = []
+        for j in range(self.height):
+            for i in range(self.width):
+                if isinstance(self.get(i, j), Box):
+                    if not self.get(i, j).is_picked_up:
+                        positions.append((np.int64(i), np.int64(j)))
+        return positions
 
     def horz_wall(
         self,
@@ -257,8 +267,15 @@ class Grid:
                 assert vis_mask is not None
                 if vis_mask[i, j]:
                     v = self.get(i, j)
+                    
+                    # print(v)
 
                     if v is None:
+                        array[i, j, 0] = OBJECT_TO_IDX["empty"]
+                        array[i, j, 1] = 0
+                        array[i, j, 2] = 0
+                        
+                    elif isinstance(v, Box):
                         array[i, j, 0] = OBJECT_TO_IDX["empty"]
                         array[i, j, 1] = 0
                         array[i, j, 2] = 0

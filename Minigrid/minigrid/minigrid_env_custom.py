@@ -16,7 +16,9 @@ from minigrid.core.actions import Actions
 from minigrid.core.constants import COLOR_NAMES, DIR_TO_VEC, TILE_PIXELS
 from minigrid.core.grid_custom import Grid
 from minigrid.core.mission import MissionSpace
-from minigrid.core.world_object import Point, WorldObj, Agent
+from minigrid.core.world_object import Point, WorldObj, Agent, Box
+import numpy
+
 
 T = TypeVar("T")
 
@@ -37,7 +39,7 @@ class MiniGridEnvCustom(gym.Env):
         width: int | None = None,
         height: int | None = None,
         max_steps: int = 100,
-        agents_pos: List[tuple[int, int]] | None = None,
+        agents_pos: List[tuple[numpy.int64, numpy.int64]] | None = None,
         agents_dir: List[int] | None = None,
         main_agent_idx: int = 0,
         agents_colors: List[str] | None = None,
@@ -102,10 +104,10 @@ class MiniGridEnvCustom(gym.Env):
 
         self.see_through_walls = see_through_walls
 
-        self.agents_initial_start_pos: List[tuple[int, int]] = agents_pos
+        self.agents_initial_start_pos: List[tuple[numpy.int64, numpy.int64]] = agents_pos
         self.agents_initial_start_dir: List[int] = agents_dir
         self.agents_colors: List[str] = agents_colors
-        self.agents_pos: List[tuple[int, int]] = []
+        self.agents_pos: List[tuple[numpy.int64, numpy.int64]] = []
         self.agents_dir: List[int] = []
         self.main_agent_idx: int = main_agent_idx
         # print("main_agent_idx:", self.main_agent_idx)
@@ -115,6 +117,7 @@ class MiniGridEnvCustom(gym.Env):
 
         # Current grid and mission and carrying
         self.grid = Grid(width, height)
+        # self.under_grid = Grid(width, height)
 
         self.agent_carrying_list = [None for _ in range(len(agents_pos))]
         # self.carrying = None
@@ -153,7 +156,7 @@ class MiniGridEnvCustom(gym.Env):
 
         obs = self.agents_observations[self.main_agent_idx]
         
-        # print("obs in reset:", obs)
+        print("obs in reset:", obs)
 
         return obs, {}
 
@@ -260,13 +263,17 @@ class MiniGridEnvCustom(gym.Env):
         """
         Set the agent's starting point at an empty position in the grid
         """
-        self.agents_pos: List[tuple[int, int]] = self.agents_initial_start_pos
+        self.agents_pos: List[tuple[numpy.int64, numpy.int64]] = self.agents_initial_start_pos
         self.agents_dir: List[int] = self.agents_initial_start_dir
         # self.agents_colors: List[str] = self.agents_colors
 
         for i in range(self.number_of_agents):
             obj = Agent(color=self.agents_colors[i])
-            self.grid.set(self.agents_pos[i][0], self.agents_pos[i][1], obj)
+            x = self.agents_pos[i][0]
+            y = self.agents_pos[i][1]
+            obj.init_pos = (x, y)
+            obj.cur_pos = (x, y)
+            self.grid.set(x, y, obj)
 
     def dir_vec(self, agent_idx):
         """
@@ -414,7 +421,7 @@ class MiniGridEnvCustom(gym.Env):
 
         obs = self.gen_obs_list()[self.main_agent_idx]
         
-        # print("obs in step:", obs)
+        print("obs in step:", obs)
 
         return obs, reward, terminated, truncated, {}
 
@@ -443,6 +450,7 @@ class MiniGridEnvCustom(gym.Env):
         elif action == self.actions.forward:
             if fwd_cell is None or fwd_cell.can_overlap():
                 self.agents_pos[agent_idx] = tuple(fwd_pos)
+                self.move_obj(current_cell, self.agents_pos[agent_idx][0], self.agents_pos[agent_idx][1])
                 if self.agent_carrying_list[agent_idx] is not None:
                     self.move_obj(self.agent_carrying_list[agent_idx], self.agents_pos[agent_idx][0], self.agents_pos[agent_idx][1])
             if current_cell is not None and current_cell.type == "box":
@@ -454,17 +462,19 @@ class MiniGridEnvCustom(gym.Env):
             if current_cell and current_cell.can_pickup():
                 if self.agent_carrying_list[agent_idx] is None:
                     self.agent_carrying_list[agent_idx] = current_cell
+                    current_cell.is_picked_up = True
 
         # Drop an object
         elif action == self.actions.drop:
             if self.agent_carrying_list[agent_idx] is not None:
                 self.grid.set(agent_pos[0], agent_pos[1], self.agent_carrying_list[agent_idx])
                 self.agent_carrying_list[agent_idx] = None
+                current_cell.is_picked_up = False
 
-        # Toggle/activate an object
-        elif action == self.actions.toggle:
-            if current_cell:
-                current_cell.toggle(self, agent_pos)
+        # # Toggle/activate an object
+        # elif action == self.actions.toggle:
+        #     if current_cell:
+        #         current_cell.toggle(self, agent_pos)
 
         # Done action (not used by default)
         elif action == self.actions.done:
@@ -507,11 +517,12 @@ class MiniGridEnvCustom(gym.Env):
         # Make it so the agent sees what it's carrying
         # We do this by placing the carried object at the agent's position
         # in the agent's partially observable view
-        agent_pos = grid.width // 2, grid.height - 1
-        if self.agent_carrying_list[agent_idx] is not None:
-            grid.set(*agent_pos, self.agent_carrying_list[agent_idx])
-        else:
-            grid.set(*agent_pos, Agent())
+        # agent_pos = grid.width // 2, grid.height - 1
+        # if self.agent_carrying_list[agent_idx] is not None:
+        #     grid.set(*agent_pos, self.agent_carrying_list[agent_idx])
+        # else:
+        #     grid.set(*agent_pos, Agent())
+        # grid.set(*agent_pos, Agent(self.agents_colors[agent_idx]))
 
         return grid, vis_mask
 
@@ -521,6 +532,8 @@ class MiniGridEnvCustom(gym.Env):
         """
         
         self.agents_observations = []
+        
+        self.box_positions = self.grid.search_unpicked_up_box()
     
         for agent_idx in range(self.number_of_agents):
             grid, vis_mask = self.gen_obs_grid(agent_idx)
@@ -528,8 +541,26 @@ class MiniGridEnvCustom(gym.Env):
 
             # print("agents_dir:", self.agents_dir[agent_idx])
 
-            obs = {"image": image, "direction": self.agents_dir[agent_idx]}
-            
+            nearest_uncarried_box_pos = None
+            # check all elements in the box_positions list and find the nearest one to the agent
+            if self.box_positions:
+                min_distance = float("inf")
+                for box_pos in self.box_positions:
+                    distance = math.sqrt(
+                        (box_pos[0] - self.agents_pos[agent_idx][0]) ** 2
+                        + (box_pos[1] - self.agents_pos[agent_idx][1]) ** 2
+                    )
+                    if distance < min_distance:
+                        min_distance = distance
+                        nearest_uncarried_box_pos = box_pos
+                
+            obs = {
+                    "image": image,
+                    "direction": self.agents_dir[agent_idx],
+                    "agent_pos": self.agents_pos[agent_idx],
+                    "nearest_uncarried_box_pos": nearest_uncarried_box_pos
+                }
+
             self.agents_observations.append(obs)
 
         return self.agents_observations
@@ -679,15 +710,13 @@ class MiniGridEnvCustom(gym.Env):
         if self.window:
             pygame.quit()
 
-    def place_obj(
+    def place_box(
         self,
         obj: WorldObj | None,
         x: int = None,
         y: int = None
     ):
-
+        obj.init_pos = (x, y)
+        obj.cur_pos = (x, y)
         self.grid.set(x, y, obj)
 
-        if obj is not None:
-            obj.init_pos = (x, y)
-            obj.cur_pos = (x, y)

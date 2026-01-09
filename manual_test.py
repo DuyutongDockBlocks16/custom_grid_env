@@ -12,13 +12,14 @@ from minigrid.manual_control import ManualControl
 # from minigrid.minigrid_env import MiniGridEnv
 from minigrid.minigrid_env_custom import MiniGridEnvCustom
 import inspect
+import numpy
 
-agents_start_pos: List[tuple[int, int]] = [
-    (2, 2), # Agent 0
-    (2, 4), # Agent 1
-    # (2, 2), # Agent 2
-    # (2, 2), # Agent 3
-    # (2, 2), # Agent 4
+agents_start_pos: List[tuple[numpy.int64, numpy.int64]] = [
+    (numpy.int64(2), numpy.int64(2)), # Agent 0
+    (numpy.int64(2), numpy.int64(4)), # Agent 1
+    # (numpy.int64(2), numpy.int64(2)), # Agent 2
+    # (numpy.int64(2), numpy.int64(2)), # Agent 3
+    # (numpy.int64(2), numpy.int64(2)), # Agent 4
 
 ]
 
@@ -62,7 +63,7 @@ class SimpleEnv(MiniGridEnvCustom):
             # mission_space=mission_space,
             grid_size=grid_size,
             # Set this to True for maximum speed
-            see_through_walls=False,
+            see_through_walls=True,
             max_steps=max_steps,
             agents_pos=agents_start_pos,
             agents_dir=agents_start_dir,
@@ -84,7 +85,7 @@ class SimpleEnv(MiniGridEnvCustom):
 
         # Place a goal square in the bottom-right corner
         # self.put_obj(Goal(), width - 2, height - 2)
-        self.place_obj(Box(color="green"), x = 3, y = 2)
+        self.place_box(Box(color="green"), x = 7, y = 7)
 
         self.place_agents()
 
